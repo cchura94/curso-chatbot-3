@@ -1,16 +1,28 @@
 const Contacto = require("./models/Contacto.js");
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require("@whiskeysockets/baileys");
+const { makeInMemoryStore } = require("@whiskeysockets/baileys/lib/index.js");
 const axios = require("axios");
 
 const userContexts = {}
+
+const store = makeInMemoryStore({ })
+
+store.readFromFile('./baileys_store.json')
+
+setInterval(() => {
+    store.writeToFile('./baileys_store.json')
+}, 10_000)
 
 async function connectToWhatsApp () {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys')
 
     const sock = makeWASocket({
         auth: state,
+        syncFullHistory: true,
         printQRInTerminal: true
     })
+
+    store.bind(sock.ev)
 
     sock.ev.on ('creds.update', saveCreds)
 
